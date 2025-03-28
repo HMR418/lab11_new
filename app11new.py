@@ -2,41 +2,49 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 
-# 1. Define a custom MSE function 
-#    (this will work in virtually any tf.keras version).
+# If your model references 'mse' as a metric or loss, define it here:
 @tf.keras.utils.register_keras_serializable()
 def custom_mse(y_true, y_pred):
     return tf.reduce_mean(tf.square(y_true - y_pred))
 
-# 2. Load your model using the custom MSE function
+# Load the saved model, supplying a custom_objects dict 
+# so Keras can properly resolve 'mse' if necessary.
 model = tf.keras.models.load_model(
     "tf_bridge_model.h5",
-    custom_objects={"mse": custom_mse}
+    custom_objects={"mse": custom_mse}  # remove if not needed
 )
 
-# 3. Set up the application title
-st.title("Simple Bridge Model Demo")
+# Set up the Streamlit app
+st.title("Bridge Maximum Load Capacity Predictor")
 
 st.write(
     """
-    This is a simple interactive interface for the loaded Keras model.
-    Enter some input values in the fields below and click 'Predict'
-    to see the model's output.
+    Enter the parameters for your bridge design below.
+    Click 'Predict' to estimate the **Maximum Load Capacity**.
     """
 )
 
-# 4. Collect user inputs (adjust as needed for your model’s input shape).
-input_1 = st.number_input("Input Feature 1", value=0.0)
-input_2 = st.number_input("Input Feature 2", value=0.0)
+# Collect user inputs (these are just placeholders—replace with 
+# whatever input features your model actually needs, e.g. span length, 
+# deck width, material strength, etc.).
+span_length = st.number_input("Span Length (meters)", value=30.0)
+deck_width = st.number_input("Deck Width (meters)", value=10.0)
+material_strength = st.number_input("Material Strength (MPa)", value=30.0)
+number_of_girders = st.number_input("Number of Girders", value=4)
 
-# 5. Create a 'Predict' button. When clicked, it will run the model prediction.
+# Button to trigger prediction
 if st.button("Predict"):
-    # Prepare the inputs for the model.
-    input_data = np.array([[input_1, input_2]], dtype=np.float32)
+    # Prepare input data. Adjust shape/dtype according to your model's needs.
+    # For example, if your model expects 4 features in a single row:
+    input_data = np.array([[span_length, deck_width, material_strength, number_of_girders]], dtype=np.float32)
 
-    # 6. Make a prediction
+    # Get prediction from the model
     prediction = model.predict(input_data)
 
-    # 7. Display the result
-    st.write("**Model Output**:", prediction)
+    # The model may output a 1D array or single value for capacity.
+    # We'll assume it's a single value for maximum load capacity.
+    max_load_capacity = prediction[0][0]
 
+    # Display the result
+    st.write("### Predicted Maximum Load Capacity:")
+    st.write(f"{max_load_capacity:.2f} kN")  # Adjust units as appropriate
