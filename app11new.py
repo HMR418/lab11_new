@@ -2,14 +2,16 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 
-# 1. Define or import the function that Keras can't find.
-#    Here, we assume 'mse' means the standard mean_squared_error.
-mse = tf.keras.losses.mean_squared_error
+# 1. Define a custom MSE function 
+#    (this will work in virtually any tf.keras version).
+@tf.keras.utils.register_keras_serializable()
+def custom_mse(y_true, y_pred):
+    return tf.reduce_mean(tf.square(y_true - y_pred))
 
-# 2. Load your saved model, telling Keras how to handle 'mse'.
+# 2. Load your model using the custom MSE function
 model = tf.keras.models.load_model(
     "tf_bridge_model.h5",
-    custom_objects={"mse": mse}
+    custom_objects={"mse": custom_mse}
 )
 
 # 3. Set up the application title
